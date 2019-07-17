@@ -44,7 +44,6 @@ float nvidia_atan2(float y, float x){
 // atan2 implementation from root CERN
 // source https://root.cern.ch/doc/v608/atan2_8h_source.html
 float cern_fast_atan2f( float y, float x ) {
- 
      // move in first octant
      float xx = std::fabs(x);
      float yy = std::fabs(y);
@@ -54,15 +53,12 @@ float cern_fast_atan2f( float y, float x ) {
          yy=xx; xx=tmp;
          tmp =1.f;
      }
- 
      // To avoid the fpe, we protect against /0.
      const float oneIfXXZero = (xx==0.f);
- 
      float t=yy/(xx/*+oneIfXXZero*/);
      float z=t;
      if( t > 0.4142135623730950f ) // * tan pi/8
              z = (t-1.0f)/(t+1.0f);
- 
      //printf("%e %e %e %e\n",yy,xx,t,z);
      float z2 = z * z;
  
@@ -77,9 +73,9 @@ float cern_fast_atan2f( float y, float x ) {
  
      // move back in place
      if (y==0.f) ret=0.f;
-     if( t > 0.4142135623730950f ) ret += M_PI_4;
-     if (tmp!=0) ret = M_PI_2 - ret;
-     if (x<0.f) ret = M_PI - ret;
+     if( t > 0.4142135623730950f ) ret += 0.78539816f;
+     if (tmp!=0) ret = 1.57079637f - ret;
+     if (x<0.f) ret = 3.14159274f - ret;
      if (y<0.f) ret = -ret;
  
      return ret;
@@ -126,13 +122,13 @@ float approxAtan2(float y, float x){
 	int invert = ay > ax;
 	float z = invert ? ax/ay : ay/ax;
 	float th = approxAtan(z);
-	th = invert ? M_PI_2 - th : th;
-	th = x < 0 ? M_PI - th : th;
+	th = invert ? 1.57079637f - th : th;
+	th = x < 0 ? 3.14159274f - th : th;
 	th = y >= 0 ? th : -th;
 	return th;
 }
 
-const unsigned int N = 16;
+const unsigned int N = 4096 * 4096;
 
 
 void check_error(float* reference, float* result){
@@ -140,7 +136,7 @@ void check_error(float* reference, float* result){
   for (unsigned int i = 0; i < N; i++){
     error += fabs(result[i]-reference[i]);
   }
-  cout << "Error " << error << endl;
+  cout << "AVG error " << error/N << endl;
 }
 //floatRandRange()
 
@@ -153,7 +149,7 @@ int main() {
 	float error = 0.f;
 	const auto seed = 42;
 	cout << "Test configuration" << endl;
-	cout << "Number of iterations " << N << " seed " << seed;
+	cout << "Number of iterations " << N << " seed " << seed << endl;
 	srand(seed);
 
 
