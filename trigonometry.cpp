@@ -10,6 +10,7 @@
 #include <iostream>
 #include <math.h>
 #include <chrono>
+#include <bitset>
 using namespace std;
 using namespace std::chrono;
 
@@ -111,20 +112,34 @@ inline float approxAtan(float z){
 	const float n1 = 0.97239411f;
 	const float n2 = -0.19194795f;
 	return 0.141499f * (z*z*z*z) - 0.343315f * (z*z*z) - 0.016224f * (z*z) + 1.003839f * z - 0.00015f ;
-//	return (n1 + n2 * z * z) * z;
+	// return (n1 + n2 * z * z) * z;
 }
 
 // Implenentation that exploits the Remez Method
 // source: https://www.dsprelated.com/showarticle/1052.php
-float approxAtan2(float y, float x){
+float approxAtan2(const float y, const float x){
 	float ax = fabs(x);
 	float ay = fabs(y);
-	int invert = ay > ax;
+	int invert = 0 - (ay > ax);
 	float z = invert ? ax/ay : ay/ax;
 	float th = approxAtan(z);
-	th = invert ? 1.57079637f - th : th;
-	th = x < 0 ? 3.14159274f - th : th;
-	th = y >= 0 ? th : -th;
+  // bitwise operations to avoid branches
+  int *th_bits = (int*)(&th);
+// th = invert ? 1.57079637f - th : th;
+
+  float tmp = 1.57079637f - th;
+  int *tmp_bits = (int*)(&tmp);
+  *th_bits = (invert & *tmp_bits) | (~invert & *th_bits);
+  
+  th = x < 0 ? 3.14159274f - th : th;
+
+  // tmp = 3.14159274f - th;
+  // invert = 0 - (x < 0);
+  // *th_bits = (invert & *tmp_bits) | (~invert & *th_bits);
+  *th_bits |= (*th_bits & ~0) | (*th_bits & 1<<31);
+  // th = invert ? 1.57079637f - th : th;
+  // th = x < 0 ? 3.14159274f - th : th;
+	// th = y >= 0 ? th : -th;
 	return th;
 }
 
@@ -151,7 +166,6 @@ int main() {
 	cout << "Test configuration" << endl;
 	cout << "Number of iterations " << N << " seed " << seed << endl;
 	srand(seed);
-
 
 	// generating input data
 	for (unsigned int i = 0; i < N; ++i) {
